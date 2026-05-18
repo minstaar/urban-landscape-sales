@@ -1,7 +1,5 @@
-# 환경 변수 (API 키 등 - 절대 GitHub에 올리면 안 됨)
 .env
 
-# 이미지 데이터 (용량이 크므로 git에서 제외)
 data/raw/images/
 
 # Python
@@ -23,7 +21,6 @@ build/
 .DS_Store
 Thumbs.db
 
-# 모델 가중치 (용량이 크므로 제외)
 *.pt
 *.pth
 *.ckpt
