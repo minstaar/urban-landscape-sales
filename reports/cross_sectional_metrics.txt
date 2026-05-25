@@ -1,0 +1,36 @@
+Cross-sectional Baseline (타뷸러 데이터만) — 성능 보고서
+==================================================
+분석 단위  : 상권별 1행 (총 852개 상권)
+X 기간     : 훈련 기간 (20222~20241) 평균
+Y 기간     : 테스트 기간 (20251~20254) 평균 log(점포당 매출)
+피처 차원  : 34개 (수치 10 + 자치구 더미)
+평가 방법  : 5-Fold CV (상권 단위)
+
+── 모델별 성능 (5-Fold CV)
+  모델                           R² 평균     R² 표준편차      RMSE       MAE
+  A. Linear Regression        0.2411      0.0576    0.7589    0.5579
+  B. Ridge (α=10)             0.2424      0.0551    0.7583    0.5575
+  C. Random Forest            0.3370      0.0435    0.7097    0.5183
+  D. Gradient Boosting        0.2696      0.0772    0.7450    0.5453
+
+── Random Forest 변수 중요도 (상위 10개)
+  상권_유형_더미                 : 0.3409
+  점포_수                     : 0.2478
+  개업률                      : 0.0846
+  상주인구                     : 0.0754
+  직장인구                     : 0.0710
+  폐업률                      : 0.0685
+  유동인구                     : 0.0521
+  면적_km2                   : 0.0460
+  gu_11440                 : 0.0020
+  gu_11650                 : 0.0015
+
+── 비교 분석 메모
+  Panel LSTM R²(val)≈0.97: cross-sectional variance 선점으로 인한 ceiling effect
+  Cross-sectional R²: 이미지 추가 시 ΔR² 측정을 위한 적정 기준선
+
+── Phase 2 계획
+  08_collect_images.py 실행 후 Street View 이미지 수집
+  09_extract_image_features.py: DINO-ViT CLS token (768차원)
+  cross_sectional_data.csv에 이미지 피처 컬럼 추가
+  동일 모델로 재학습 → ΔR² 측정
