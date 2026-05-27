@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-09_filter_images.py — CLIP 기반 이미지 필터링
+07_filter_images.py — CLIP 기반 이미지 필터링
 ─────────────────────────────────────────────────────────────────────────────
 [역할]
-    08_collect_images.py 이후 단계.
+    06_collect_images.py 이후 단계.
     각 샘플 포인트당 수집된 두 방향(A/B) 이미지 중:
       ① 상업 전면(commercial storefront)에 가까운 방향 자동 선택
       ② 선택된 이미지도 품질 기준 미달이면 rejected로 이동
@@ -34,7 +34,7 @@
     11번 스크립트에 자동 반영됨 (폴더 내 모든 jpg 스캔)
 
 실행:
-    python scripts/09_filter_images.py
+    python scripts/07_filter_images.py
 
 의존성:
     pip install torch transformers Pillow --break-system-packages
@@ -63,7 +63,7 @@ VALID_CSV     = ROOT / "data/processed/valid_image_sangkwon.csv"
 
 # ── CLIP 파라미터 ──────────────────────────────────────────────────────────────
 CLIP_MODEL_ID   = "openai/clip-vit-base-patch32"
-CLIP_THRESHOLD  = 0.22    # 이 점수 미만 → rejected (0~1 범위, 경험적 기준)
+CLIP_THRESHOLD  = 0.12    # 이 점수 미만 → rejected (분포 분석 기반: 하위 ~8% 제거)
 MIN_VALID_IMAGES = 5      # 이 미만 상권 → flagged (11번에서 제외)
 
 # ── CLIP 텍스트 프롬프트 ───────────────────────────────────────────────────────
@@ -88,7 +88,9 @@ def clip_score(image_path, model, processor, text_features, device):
     try:
         img    = Image.open(image_path).convert("RGB")
         inputs = processor(images=img, return_tensors="pt").to(device)
-        img_feat = model.get_image_features(**inputs)
+        # 이미지 피처: vision_model → projection 거쳐야 텍스트 공간과 일치
+        vision_outputs = model.vision_model(**inputs)
+        img_feat = model.visual_projection(vision_outputs.pooler_output)
         img_feat = img_feat / img_feat.norm(dim=-1, keepdim=True)
         # positive - negative 차이로 상업성 점수 계산
         score = (img_feat @ text_features.T).squeeze()
@@ -118,12 +120,27 @@ def parse_filename(fname):
 # ══════════════════════════════════════════════════════════════════════════════
 def main():
     print("=" * 65)
-    print("09_filter_images.py — CLIP 기반 이미지 필터링")
+    print("07_filter_images.py — CLIP 기반 이미지 필터링")
     print("=" * 65)
 
     if not IMG_DIR.exists():
-        print(f"  ⚠ {IMG_DIR} 없음. 08_collect_images.py를 먼저 실행하세요.")
+        print(f"  ⚠ {IMG_DIR} 없음. 06_collect_images.py를 먼저 실행하세요.")
         return
+
+    # ── 이전 필터링 결과 복구 (재실행 안전) ──────────────────────────────────
+    # images_rejected/ 에 있는 이미지를 images/ 로 되돌린 뒤 다시 필터링
+    if REJECTED_DIR.exists():
+        restored = 0
+        for sq_dir in REJECTED_DIR.iterdir():
+            if not sq_dir.is_dir():
+                continue
+            target = IMG_DIR / sq_dir.name
+            target.mkdir(exist_ok=True)
+            for img in sq_dir.glob("*.jpg"):
+                shutil.move(str(img), str(target / img.name))
+                restored += 1
+        if restored:
+            print(f"\n  이전 rejected 이미지 {restored}장 복구 완료 → 재필터링 시작")
 
     # ── 디바이스 설정 ─────────────────────────────────────────────────────────
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -135,7 +152,9 @@ def main():
     texts  = [POSITIVE_PROMPT, NEGATIVE_PROMPT]
     t_inputs = processor(text=texts, return_tensors="pt", padding=True).to(device)
     with torch.no_grad():
-        text_features = model.get_text_features(**t_inputs)
+        # 텍스트 피처: text_model → projection 거쳐야 이미지 공간과 일치
+        text_outputs = model.text_model(**t_inputs)
+        text_features = model.text_projection(text_outputs.pooler_output)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
     print(f"\n  Positive: '{POSITIVE_PROMPT}'")
@@ -184,20 +203,15 @@ def main():
                 score = clip_score(img_path, model, processor, text_features, device)
                 scored.append((score, img_path))
 
-            scored.sort(key=lambda x: x[0], reverse=True)
-            best_score, best_path = scored[0]
-
-            if best_score >= CLIP_THRESHOLD:
-                # 최고 점수 이미지 보존, 나머지 rejected로
-                kept_count += 1
-                total_kept += 1
-                for score, img_path in scored[1:]:
-                    rejected_dir.mkdir(exist_ok=True)
-                    shutil.move(str(img_path), str(rejected_dir / img_path.name))
-                    total_rejected += 1
-            else:
-                # 전부 rejected
-                for score, img_path in scored:
+            # 각 이미지를 독립적으로 임계값 판단
+            # - 둘 다 통과 → 둘 다 유지 (좁은 골목 등 양쪽 다 상업)
+            # - 하나만 통과 → 통과한 것만 유지
+            # - 둘 다 미달 → 둘 다 rejected
+            for score, img_path in scored:
+                if score >= CLIP_THRESHOLD:
+                    kept_count += 1
+                    total_kept += 1
+                else:
                     rejected_dir.mkdir(exist_ok=True)
                     shutil.move(str(img_path), str(rejected_dir / img_path.name))
                     total_rejected += 1

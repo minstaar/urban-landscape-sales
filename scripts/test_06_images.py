@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-test_08_images.py — 도로 엣지 수직 샘플링 방식 검증
+test_06_images.py — 도로 엣지 수직 샘플링 방식 검증
 ─────────────────────────────────────────────────────────────────────────────
 [수집 전략]
     POI 기반(OSM 데이터 품질 의존) → 도로 엣지 수직 샘플링으로 변경
@@ -9,7 +9,7 @@ test_08_images.py — 도로 엣지 수직 샘플링 방식 검증
     2. 각 엣지 중점(들)을 샘플 포인트로 사용
     3. 도로에 수직인 두 방향 (±90°) 모두 이미지 수집
        → centroid 휴리스틱 없이, 두 장 모두 저장
-       → 09_filter_images.py (CLIP) 에서 상업 전면 방향 자동 선택
+       → 07_filter_images.py (CLIP) 에서 상업 전면 방향 자동 선택
     4. 공간 분산 (MIN_SPREAD_M 이상 간격 보장)
     5. 메타데이터 API로 실제 파노라마 위치 확인
        → MAX_SNAP_M 초과 시 실내/지하 스냅으로 간주, 스킵
@@ -31,7 +31,7 @@ test_08_images.py — 도로 엣지 수직 샘플링 방식 검증
     발달상권 3개 / 골목상권 3개 — 총 6개
 
 실행:
-    python scripts/test_08_images.py
+    python scripts/test_06_images.py
 
 출력:
     data/images_test/{상권_코드}/{lat}_{lng}_{heading}.jpg
@@ -256,7 +256,7 @@ def main():
         raise ValueError("GOOGLE_STREETVIEW_API_KEY가 .env에 없습니다.")
 
     print("=" * 65)
-    print("test_08_images.py — 도로 엣지 수직 샘플링 방식")
+    print("test_06_images.py — 도로 엣지 수직 샘플링 방식")
     print("=" * 65)
 
     # ── 1. SHP 로드 ──────────────────────────────────────────────────────────
@@ -394,8 +394,8 @@ def main():
     print(f"{'=' * 65}")
     print("\n다음 단계:")
     print("  1. data/images_test/ 폴더에서 수집 결과 확인")
-    print("  2. python scripts/09_filter_images.py  ← CLIP 필터링 (방향 자동 선택)")
-    print("  3. 확인 후 → python scripts/08_collect_images.py 전체 852 상권 수집")
+    print("  2. python scripts/07_filter_images.py  ← CLIP 필터링 (방향 자동 선택)")
+    print("  3. 확인 후 → python scripts/06_collect_images.py 전체 852 상권 수집")
 
 
 if __name__ == "__main__":

@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-08_collect_images.py
+06_collect_images.py
 ─────────────────────────────────────────────────────────────────────────────
-Street View 이미지 수집 — 도로 엣지 수직 샘플링 (test_08_images.py 검증 완료)
+Street View 이미지 수집 — 도로 엣지 수직 샘플링 (test_06_images.py 검증 완료)
 
 [수집 전략]
     1. 상권 폴리곤 내 상업 도로 엣지 추출 (osmnx)
     2. 엣지 중점을 SAMPLE_INTERVAL_M 간격으로 분할 → 후보 포인트 생성
     3. 공간 분산 필터(MIN_SPREAD_M) → n_pts개 선택
     4. 각 포인트에서 도로에 수직인 두 방향(±90°) 모두 이미지 수집
-       → 어느 쪽이 상업 전면인지는 09_filter_images.py(CLIP)에서 자동 결정
+       → 어느 쪽이 상업 전면인지는 07_filter_images.py(CLIP)에서 자동 결정
     5. 메타데이터 API로 실제 파노라마 위치 확인 → MAX_SNAP_M 초과 시 스킵
 
 [방향 결정 근거]
@@ -42,7 +42,7 @@ Street View 이미지 수집 — 도로 엣지 수직 샘플링 (test_08_images.
     파일이 이미 존재하면 자동 스킵
 
 실행:
-    python scripts/08_collect_images.py
+    python scripts/06_collect_images.py
 
 출력:
     data/images/{상권_코드}/{lat}_{lng}_{heading}.jpg
@@ -335,7 +335,7 @@ def main():
         )
 
     print("=" * 65)
-    print("08_collect_images.py — 도로 엣지 수직 샘플링 (전체 상권)")
+    print("06_collect_images.py — 도로 엣지 수직 샘플링 (전체 상권)")
     if args.total > 1:
         print(f"  분할 모드: {args.part}/{args.total} 파트")
     print("=" * 65)
@@ -493,7 +493,7 @@ def main():
     print(f"  총 이미지 파일         : {total_files:,}장  →  {IMG_DIR}")
     print(f"  수집 로그              → {LOG_PATH}")
     print(f"{'=' * 65}")
-    print("\n다음 단계: python scripts/09_filter_images.py  ← CLIP 필터링")
+    print("\n다음 단계: python scripts/07_filter_images.py  ← CLIP 필터링")
 
 
 if __name__ == "__main__":
