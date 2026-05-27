@@ -1,6 +1,8 @@
 .env
 
 data/raw/images/
+data/images/
+data/images_test/
 
 # Python
 __pycache__/
