@@ -427,7 +427,7 @@ def main():
         img_dir = IMG_DIR / code
         img_dir.mkdir(exist_ok=True)
 
-        for pt_lat, pt_lng, h_a, h_b in sampled:
+        for pt_lat, pt_lng, h_a, h_b, _ in sampled:
 
             # 두 방향 모두 이미 존재하면 포인트 전체 스킵
             lat_s = f"{pt_lat:.6f}"
