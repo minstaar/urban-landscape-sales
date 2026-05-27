@@ -3,6 +3,11 @@
 data/raw/images/
 data/images/
 data/images_test/
+data/images_rejected/
+
+# osmnx 캐시
+cache/
+*.json.gz
 
 # Python
 __pycache__/
