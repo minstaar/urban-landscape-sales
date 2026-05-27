@@ -74,9 +74,10 @@ TEST_CODES = {
 
 # ── 샘플링 파라미터 ───────────────────────────────────────────────────────────────
 MAX_POINTS        = 15   # 상권당 최대 샘플 포인트 수
-MIN_SPREAD_M      = 40   # 포인트 간 최소 거리(m) — 공간 분산
+MIN_SPREAD_M      = 30   # 포인트 간 최소 거리(m) — 공간 분산
 MAX_SNAP_M        = 30   # 파노라마-요청좌표 거리 초과 시 실내 스냅으로 간주, 스킵
-SAMPLE_INTERVAL_M = 30   # 긴 엣지 분할 샘플링 간격(m)
+SAMPLE_INTERVAL_M = 20   # 긴 엣지 분할 샘플링 간격(m)
+MAX_PTS_PER_EDGE  = 2    # 엣지당 최대 포인트 수 — primary 긴 도로 독점 방지
 
 # ── Street View 설정 ─────────────────────────────────────────────────────────────
 SV_BASE   = "https://maps.googleapis.com/maps/api/streetview"
@@ -188,6 +189,14 @@ def sample_edges_in_polygon(edges_gdf, nodes_gdf, polygon):
 
         edge_bearing = compute_heading(u_lat, u_lng, v_lat, v_lng)
         h_a, h_b = perp_both(edge_bearing)             # 두 방향
+
+        edge_len_m = dist_m(u_lat, u_lng, v_lat, v_lng)
+        if edge_len_m < SAMPLE_INTERVAL_M:
+            sample_fracs = [0.5]
+        else:
+            n_seg = max(1, int(edge_len_m / SAMPLE_INTERVAL_M))
+            n_seg = min(n_seg, MAX_PTS_PER_EDGE)
+            sample_fracs = [(i + 0.5) / n_seg for i in range(n_seg)]
 
         for t in sample_fracs:
             pt_lat = u_lat + t * (v_lat - u_lat)
